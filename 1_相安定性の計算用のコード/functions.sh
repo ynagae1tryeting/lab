@@ -152,6 +152,7 @@ function MBJ.MakeInput() {
 }
 
 
+
 #  ----- (INCAR,POTCAR,KPOINTS,POSCARの存在を確認して、順次計算) -----
 
 
