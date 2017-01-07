@@ -160,6 +160,7 @@ function MBJ.MakeInput() {
 
 #  ----- (phonopyで最安定の体積をBMfittingで計算、その出力を各原子配置ごとでまとめる) -----
 
+
 #  ----- (温度依存を考えて、0,100,200,1500(16種類)の温度の体積に各POSCARを出力、INCARを原子位置の最適化でset) -----
 
 #  ----- (phonopyでhelmholtz free energy計算) -----
