@@ -1,14 +1,12 @@
 #!/bin/bash
-. ./functions.sh
 
-BM.MakeInput
+# --- srcファイルの読み込み
+srcpath=./src/*.sh ; for i in $srcpath ; do . $i; done
 
-BM.Clean
-
-BM.Vasprun
+BM.Vasprun.Slack
 
 BM.Integrateddata
 
-phonopy-qha -b e-v.dat
+#phonopy-qha -b e-v.dat
 
-MBJ.MakeInput
+#MBJ.MakeInput
