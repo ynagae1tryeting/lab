@@ -44,9 +44,12 @@ FofReactpath <- function(index0, pathindex){
     return(f)
 }
 
-makeP.df <- function(index0,pathindex.df){
+makeP.df <- function(
+    index0,
+    pathindex.df
+    ){
     for (i in 1:ncol(pathindex.df)){
-        assign(sprintf("f%d", i), FofReactpath(index0,pathindex[1,i]))
+        assign(sprintf("f%d", i), FofReactpath(index0=index0,pathindex=pathindex.df[1,i]))
         if (i==1){fsum <- 0}
         fsum <- fsum + get(sprintf("f%d", i))
     }
@@ -150,8 +153,49 @@ Reaction <- function(P.df, index0, pathindex.df){
 MCS.binaryalloy.2D <- function(cell){
     for (i in 1:nrow(cell)){
         for (j in 1:ncol(cell)){
-        # --- 着目するセルの回りのindexを格納
-        # XXX i, jが端っこの時の周期境界条件を設定しないといけない
+            #message(paste("i: ", i, " j: ", j, sep=""))
+            # --- 着目するセルの回りのindexを格納
+            # XXX i, jが端っこの時の周期境界条件を設定しないといけない
+            pathj1 <- j-1
+            pathj2 <- j+1
+            pathi3 <- i-1
+            pathi4 <- i+1
+            if (j == 1) {pathj1 <- ncol(cell)}
+            if (j == ncol(cell)) {pathj2 <- 1}
+            if (i == 1) {pathi3 <- nrow(cell)}
+            if (i == nrow(cell)) {pathi4 <- 1}
+
+            index0 <- cell[i,j]
+            index1 <- cell[i,pathj1]
+            index2 <- cell[i,pathj2]
+            index3 <- cell[pathi3,j]
+            index4 <- cell[pathi4,j]
+            pathindex.df <- data.frame(index1,index2,index3,index4)
+            P.df <- makeP.df(
+                index0=index0,
+                pathindex.df=pathindex.df)
+            index.df <- Reaction(P.df, index0, pathindex.df)
+            # --- 相互作用した後のindexを入れ直す
+            cell[i,j]   <- index.df[,1]
+            cell[i,pathj1] <- index.df[,2]
+            cell[i,pathj2] <- index.df[,3]
+            cell[pathi3,j] <- index.df[,4]
+            cell[pathi4,j] <- index.df[,5]
+        }
+    }
+    return(cell)
+}
+
+
+# 計算を高速化した
+MCS.binaryalloy.2D_rev <- function(cell){
+    x <- 1:nrow(cell)
+    y <- 1:ncol(cell)
+    data <- data.frame("x"=x,"y"=y)
+
+    getcell <- function(d, cell){
+        i <- d[1]
+        j <- d[2]
         pathj1 <- j-1
         pathj2 <- j+1
         pathi3 <- i-1
@@ -160,14 +204,15 @@ MCS.binaryalloy.2D <- function(cell){
         if (j == ncol(cell)) {pathj2 <- 1}
         if (i == 1) {pathi3 <- nrow(cell)}
         if (i == nrow(cell)) {pathi4 <- 1}
-
         index0 <- cell[i,j]
         index1 <- cell[i,pathj1]
         index2 <- cell[i,pathj2]
         index3 <- cell[pathi3,j]
         index4 <- cell[pathi4,j]
         pathindex.df <- data.frame(index1,index2,index3,index4)
-        P.df <- makeP.df(index0,pathindex.df)
+        P.df <- makeP.df(
+            index0=index0,
+            pathindex.df=pathindex.df)
         index.df <- Reaction(P.df, index0, pathindex.df)
         # --- 相互作用した後のindexを入れ直す
         cell[i,j]   <- index.df[,1]
@@ -175,7 +220,41 @@ MCS.binaryalloy.2D <- function(cell){
         cell[i,pathj2] <- index.df[,3]
         cell[pathi3,j] <- index.df[,4]
         cell[pathi4,j] <- index.df[,5]
+
+        celllist <- list(
+            "c1"=index.df[,1],
+            "c2"=index.df[,2],
+            "c3"=index.df[,3],
+            "c4"=index.df[,4],
+            "c5"=index.df[,5])
+
+        return(celllist)
+    }
+
+    l <- apply(data,1,getcell, cell)
+    d <- matrix(unlist(l),nrow=nrow(data))
+    
+    for(r in 1:nrow(d)){
+        i <- data[r,1]
+        j <- data[r,2]
+        if(j!=30){
+            pathj1 <- j-1
+            pathj2 <- j+1
+        }else{
+            j <- j - 30
+            pathj1 <- j-1
+            pathj2 <- j+1
         }
+        if(i!=30){
+            i <- i - 30
+            pathi3 <- i-1
+            pathi4 <- i+1
+        }
+        cell[i,j]      <- d[r,1]
+        cell[i,pathj1] <- d[r,2]
+        cell[i,pathj2] <- d[r,3]
+        cell[pathi3,j] <- d[r,4]
+        cell[pathi4,j] <- d[r,5]
     }
     return(cell)
 }

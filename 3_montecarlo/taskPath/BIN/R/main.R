@@ -5,13 +5,16 @@
 # --- 温度依存のchemical potentialを導入すべきだが、まずは簡単に0Kの第一原理データからシミュレーションする。
 
 source("./function.R")
+library(lattice)
+library(tidyverse)
+
 
 # --- 初期条件パラメータ入力
 KB <- 8.6173303*10^(-5) # Boltzmann定数…　eV/K
 T <- 1000     # --- 計算する温度条件
-k <- 200     # --- セルのメッシュ数。k*kのモデルを作成する。
+k <- 30     # --- セルのメッシュ数。k*kのモデルを作成する。
 SnPercent <- 0.075 # --- 作成するモデルに含まれるSnの数
-MCS <- 150 # --- MCSステップの数
+MCS <- 200 # --- MCSステップの数
 
 # --- 0K におけるHFE
 myuA <- -35.441254 / 4
@@ -25,7 +28,7 @@ Etotal <- cellRatio[1,1] * myuA + cellRatio[1,2] * myuB + cellRatio[1,3] * myuC 
 
 x <- k/10*(1:nrow(cell));   y <- k/10*(1:ncol(cell))
 png(
-    paste("~/Desktop/500K/step0.png",sep=""),
+    paste("./png/step0.png",sep=""),
     width     = 3.25,
     height    = 3.25,
     units     = "in",
@@ -39,29 +42,39 @@ par(
     cex.axis = 2,
     cex.lab  = 1
 )
-the_plot()
+d <- melt(cell)
+ggplot(d, aes(x=X1, y=X2, fill=value)) +
+geom_tile()
 dev.off()
 
 # --- MCS計算ステップ
 for (l in 1:MCS){
+    message(paste("step = ", l, sep=""))
     cell <- MCS.binaryalloy.2D(cell)
-    png(
-    paste("~/Desktop/500K/step",l,".png",sep=""),
-    width     = 3.25,
-    height    = 3.25,
-    units     = "in",
-    res       = 1200,
-    pointsize = 4
-    )
-par(
-    mar      = c(5, 5, 2, 2),
-    xaxs     = "i",
-    yaxs     = "i",
-    cex.axis = 2,
-    cex.lab  = 1
-)
-the_plot()
-dev.off()
+
+    if(sum(l == c(seq(10,200,10)))){
+        message(paste("make png snapshot", sep=""))
+        write.csv(cell, paste("./cell/step",l,".csv", sep=""), quote=F, row.names=F)
+        png(
+            paste("./png/step",l,".png",sep=""),
+            width     = 3.25,
+            height    = 3.25,
+            units     = "in",
+            res       = 1200,
+            pointsize = 4
+        )
+        par(
+            mar      = c(5, 5, 2, 2),
+            xaxs     = "i",
+            yaxs     = "i",
+            cex.axis = 2,
+            cex.lab  = 1
+        )
+        d <- melt(cell)
+        ggplot(d, aes(x=X1, y=X2, fill=value)) +
+        geom_tile()
+        dev.off()
+    }
 }
 
 #system("ffmpeg -r 2 -i step%2d.png test.mp4")
