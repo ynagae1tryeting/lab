@@ -13,7 +13,7 @@ library(tidyverse)
 KB <- 8.6173303*10^(-5) # Boltzmann定数…　eV/K
 T <- 1000     # --- 計算する温度条件
 k <- 30     # --- セルのメッシュ数。k*kのモデルを作成する。
-SnPercent <- 0.075 # --- 作成するモデルに含まれるSnの数
+percent <- 0.2 # --- 作成するモデルに含まれるSnの数
 MCS <- 200 # --- MCSステップの数
 
 # --- 0K におけるHFE
@@ -22,62 +22,32 @@ myuB <- -42.913069 / 4
 myuC <- -30.486315 / 4
 
 # --- 初期状態のcellを作成
-cell <- make2Dcell(mesh=k,SnPercent)
+cell <- make2Dcell(mesh=k,percent)
 cellRatio <- cellRatio(cell)
 Etotal <- cellRatio[1,1] * myuA + cellRatio[1,2] * myuB + cellRatio[1,3] * myuC # --- totalE計算
 
 x <- k/10*(1:nrow(cell));   y <- k/10*(1:ncol(cell))
-png(
-    paste("./png/step0.png",sep=""),
-    width     = 3.25,
-    height    = 3.25,
-    units     = "in",
-    res       = 1200,
-    pointsize = 4
-    )
-par(
-    mar      = c(5, 5, 2, 2),
-    xaxs     = "i",
-    yaxs     = "i",
-    cex.axis = 2,
-    cex.lab  = 1
-)
 d <- melt(cell)
-ggplot(d, aes(x=X1, y=X2, fill=value)) +
-geom_tile()
-dev.off()
+P <- ggplot(d, aes(x=Var1, y=Var2, fill=value))
+P <- P + geom_tile()
+P <- P + ggtitle(paste0(percent*100, "percent: ", 0, " MCS step"))
+P
+ggsave(paste0("./png/",percent*100,"_percent/step",0,".png"))
 
 # --- MCS計算ステップ
 for (l in 1:MCS){
     message(paste("step = ", l, sep=""))
     cell <- MCS.binaryalloy.2D(cell)
+    message(paste("make png snapshot", sep=""))
+    write.csv(cell, paste("./cell/",percent*100,"_percent/step",l,".csv", sep=""), quote=F, row.names=F)
 
-    if(sum(l == c(seq(10,200,10)))){
-        message(paste("make png snapshot", sep=""))
-        write.csv(cell, paste("./cell/step",l,".csv", sep=""), quote=F, row.names=F)
-        png(
-            paste("./png/step",l,".png",sep=""),
-            width     = 3.25,
-            height    = 3.25,
-            units     = "in",
-            res       = 1200,
-            pointsize = 4
-        )
-        par(
-            mar      = c(5, 5, 2, 2),
-            xaxs     = "i",
-            yaxs     = "i",
-            cex.axis = 2,
-            cex.lab  = 1
-        )
-        d <- melt(cell)
-        ggplot(d, aes(x=X1, y=X2, fill=value)) +
-        geom_tile()
-        dev.off()
-    }
+    # 作図
+    d <- melt(cell)
+    P <- ggplot(d, aes(x=Var1, y=Var2, fill=value))
+    P <- P + geom_tile()
+    P <- P + ggtitle(paste0(percent*100, "percent: ", l, " MCS step"))
+    P
+    ggsave(paste0("./png/",percent*100,"_percent/step",l,".png"))
 }
 
-#system("ffmpeg -r 2 -i step%2d.png test.mp4")
-#image(x, y, cell, col = terrain.colors(100), axes = T)
-#saveRDS(cell, "~/Desktop/cellAfter150MCS_Sn20percent_T200K.obj")
-
+message("finished.")
