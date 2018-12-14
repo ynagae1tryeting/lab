@@ -33,6 +33,7 @@ g <- g + labs(x="R (nm)", y="density")
 g <- g + ggtitle(paste0(percent*100, "percent: ", "Density plot of each MCS step"))
 #g <- g + scale_fill_npg() + scale_color_npg()
 g <- g + xlim(c(0,25))
+g <- g + facet_wrap(~factor(step)) 
 g
 ggsave(paste0("./png_den/", percent*100, "_percent.png"))
 
